@@ -1,11 +1,17 @@
-import express from 'express';
-import Tip from '../models/Tip.js';
-const router = express.Router();
+import mongoose from "mongoose";
+import Tip from "../models/Tip.js"; // copy your Mongoose model there
 
-router.get('/', async (_,res)=> res.json(await Tip.find()));
-router.post('/', async (req,res)=> {
-  const t = await Tip.create(req.body);
-  res.status(201).json(t);
-});
+// connect once
+mongoose.connect(process.env.MONGO_URI);
 
-export default router;
+export default async function handler(req, res) {
+  if (req.method === "GET") {
+    const tips = await Tip.find().sort({ createdAt: -1 });
+    return res.status(200).json(tips);
+  }
+  if (req.method === "POST") {
+    const tip = await Tip.create(req.body);
+    return res.status(201).json(tip);
+  }
+  res.status(405).end();
+}

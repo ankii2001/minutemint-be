@@ -4,8 +4,8 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
 
-import tipsRouter  from './routes/tips.js';
-import namesRouter from './routes/names.js';
+import tipsRouter  from './api/tips.js';
+import namesRouter from './api/names.js';
 
 dotenv.config();
 

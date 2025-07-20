@@ -1,16 +1,9 @@
-import mongoose from "mongoose";
 
-const NameSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-}, { timestamps: true });
-
-const Name = mongoose.models.Name || mongoose.model("Name", NameSchema);
-
-if (!mongoose.connection.readyState) {
-  mongoose.connect(process.env.MONGO_URI);
-}
+import Name from "../models/Name.js";
+import dbConnect from "../utils/dbConnect.js";
 
 export default async function handler(req, res) {
+  await dbConnect();
   // 1) CORS headers
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
@@ -21,12 +14,17 @@ export default async function handler(req, res) {
     return res.status(204).end();
   }
 
-  try {
-    if (req.method === "GET") {
+  if (req.method === "GET") {
+    try {
       const docs = await Name.find().sort({ createdAt: -1 });
       return res.status(200).json(docs.map(d => d.name));
+    } catch (err) {
+      console.error("Error in GET /api/names:", err);
+      return res.status(500).json({ error: "Internal Server Error" });
     }
-    if (req.method === "POST") {
+  }
+  if (req.method === "POST") {
+    try {
       const payload = req.body;
       let saved;
       if (Array.isArray(payload)) {
@@ -38,11 +36,11 @@ export default async function handler(req, res) {
         saved = await Name.create({ name: payload });
         return res.status(201).json(saved.name);
       }
+    } catch (err) {
+      console.error("Error in POST /api/names:", err);
+      return res.status(500).json({ error: "Internal Server Error" });
     }
-    res.setHeader("Allow", ["GET","POST","OPTIONS"]);
-    return res.status(405).end(`Method ${req.method} Not Allowed`);
-  } catch (err) {
-    console.error("Error in /api/names:", err);
-    return res.status(500).json({ error: "Internal Server Error" });
   }
+  res.setHeader("Allow", ["GET", "POST"]);
+  return res.status(405).end(`Method ${req.method} Not Allowed`);
 }
